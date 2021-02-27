@@ -1149,6 +1149,9 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	if ( knockback > 200 ) {
 		knockback = 200;
 	}
+	if (knockback && targ->health && targ != attacker) {
+		knockback+=targ->health/2;
+	}
 	if ( targ->flags & FL_NO_KNOCKBACK ) {
 		knockback = 0;
 	}
@@ -1182,7 +1185,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 			targ->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 		}
 		//Remeber the last person to hurt the player
-		if( !g_awardpushing.integer || targ==attacker || OnSameTeam (targ, attacker)) {
+		if( !g_awardpushing.integer || OnSameTeam (targ, attacker)) {
 			targ->client->lastSentFlying = -1;
 		}
 		else {
@@ -1251,12 +1254,6 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		attacker->client->ps.persistant[PERS_ATTACKEE_ARMOR] = (targ->health<<8)|(client->ps.stats[STAT_ARMOR]);
 	}
 
-	// always give half damage if hurting self
-	// calculated after knockback, so rocket jumping works
-	if ( targ == attacker) {
-		damage *= 0.5;
-	}
-
 	if(targ->client && attacker->client ) {
 		damage = catchup_damage(damage, attacker->client->ps.persistant[PERS_SCORE], targ->client->ps.persistant[PERS_SCORE]);
 	}
@@ -1269,18 +1266,17 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		damage = 1;
 	}
 
-	if(targ == attacker && (g_dmflags.integer & DF_NO_SELF_DAMAGE) ) {
+	if(targ == attacker) {
 		damage = 0;
 	}
 
-	if ((G_IsARoundBasedGametype(g_gametype.integer) || g_elimination_allgametypes.integer) &&
-		g_elimination_selfdamage.integer<1 && ( targ == attacker ||  mod == MOD_FALLING )) {
+	if ( mod == MOD_FALLING ) {
 		damage = 0;
 	}
 
 
 //So people can be telefragged!
-	if (G_IsARoundBasedGametype(g_gametype.integer) && level.time < level.roundStartTime && ((mod == MOD_LAVA) || (mod == MOD_SLIME)) ) {
+	if (mod == MOD_LAVA || mod == MOD_SLIME ) {
 		damage = 1000;
 	}
 
@@ -1350,12 +1346,12 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
 	// do the damage
 	if (take) {
-		targ->health = targ->health - take;
+		targ->health = targ->health + take;
 		if ( targ->client ) {
 			targ->client->ps.stats[STAT_HEALTH] = targ->health;
 		}
 
-		if ( targ->health <= 0 ) {
+		if ( targ->health < 0 ) {
 			if ( client )
 				targ->flags |= FL_NO_KNOCKBACK;
 
@@ -1371,6 +1367,11 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		}
 	}
 
+	if (mod == MOD_LAVA || mod == MOD_SLIME || mod==MOD_TRIGGER_HURT || mod==MOD_SUICIDE || mod == MOD_TELEFRAG ) {
+		targ->health = -999;
+		targ->enemy = attacker;
+		targ->die (targ, inflictor, attacker, take, mod);
+	}
 
 }
 

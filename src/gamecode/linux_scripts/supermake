@@ -1,7 +1,7 @@
 
 #Tip: You can create a supermake.local file and this script will get the variable from there!
 BINNAME=openarena
-MODNAME=oax
+MODNAME=vkings
 #ARCH should be either i386 (32 bit) or x86_64 (64 bit)
 ARCH=i386
 
