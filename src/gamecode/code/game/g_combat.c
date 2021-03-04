@@ -1103,11 +1103,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
 	if ( (attacker == &g_entities[ENTITYNUM_WORLD] || attacker == targ || attacker->s.eType != ET_PLAYER) && client && client->lastSentFlying>-1 &&
 	        ( mod==MOD_FALLING || mod==MOD_LAVA || mod==MOD_SLIME || mod==MOD_TRIGGER_HURT || mod==MOD_SUICIDE)) {
-		if( client->lastSentFlyingTime+5000<level.time) {
-			//More than 5 seconds, not a kill!
-			client->lastSentFlying = -1;
-		}
-		else {
+		{
 			attacker = &g_entities[client->lastSentFlying];
 		}
 	}
@@ -1150,7 +1146,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		knockback = 200;
 	}
 	if (knockback && targ->health && targ != attacker) {
-		knockback+=targ->health/2;
+		knockback = knockback* (targ->health/100.0);
 	}
 	if ( targ->flags & FL_NO_KNOCKBACK ) {
 		knockback = 0;
